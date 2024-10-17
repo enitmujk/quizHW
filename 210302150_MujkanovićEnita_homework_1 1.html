@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Quiz</title>
+    <style>
+        body {
+            background-color: darkgreen;
+            color: white;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h2, p {
+            margin: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #next-button-container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Java Quiz</h2>
+    <p>Test your Java knowledge with this simple quiz!</p>
+    <button id="start-quiz" onclick="startQuiz()">Start Quiz</button>
+
+    <div id="quiz-container" style="display: none;">
+        <div id="question-container">
+            <p id="question-text"></p>
+        </div>
+        <div id="options-container"></div>
+        <div id="next-button-container">
+            <button id="next-button" style="display: none;" onclick="nextQuestion()">Next</button>
+        </div>
+    </div>
+
+    <div id="result-container" style="display: none;">
+        <h2>Quiz Completed!</h2>
+        <p id="correct-answers"></p>
+        <p id="incorrect-answers"></p>
+    </div>
+
+    <script>
+        const jsonFileUrl = "https://raw.githubusercontent.com/mujkenit/Small-Quiz-Application/main/pitanja.json";
+
+        let jsonData;
+        let shuffledQuestions;
+        let currentQuestionIndex;
+
+        const startQuizButton = document.getElementById("start-quiz");
+        const quizContainer = document.getElementById("quiz-container");
+        const resultContainer = document.getElementById("result-container");
+        const questionTextElement = document.getElementById("question-text");
+        const optionsContainer = document.getElementById("options-container");
+        const nextButton = document.getElementById("next-button");
+        const correctAnswersElement = document.getElementById("correct-answers");
+        const incorrectAnswersElement = document.getElementById("incorrect-answers");
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        async function fetchQuizData() {
+            try {
+                const response = await fetch(jsonFileUrl);
+                jsonData = await response.json();
+                return jsonData.Quiz.questions;
+            } catch (error) {
+                console.error("Error fetching quiz data:", error);
+            }
+        }
+
+        async function startQuiz() {
+            const questions = await fetchQuizData();
+
+            if (questions) {
+                shuffledQuestions = [...questions];
+                shuffleArray(shuffledQuestions);
+                currentQuestionIndex = 0;
+                showQuestion();
+            }
+        }
+
+        function showQuestion() {
+    const currentQuestion = shuffledQuestions[currentQuestionIndex];
+    questionTextElement.textContent = currentQuestion.question;
+
+    optionsContainer.innerHTML = "";
+    currentQuestion.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.textContent = `${index + 1}. ${option}`;
+        button.addEventListener("click", () => selectAnswer(index));
+        optionsContainer.appendChild(button);
+    });
+
+    quizContainer.style.display = "block";
+    startQuizButton.style.display = "none";
+    nextButton.style.display = "none";
+}
+
+function selectAnswer(selectedIndex) {
+    const currentQuestion = shuffledQuestions[currentQuestionIndex];
+    const selectedOption = currentQuestion.options[selectedIndex];
+
+    currentQuestion.selectedOptionIndex = selectedIndex;
+
+    const buttons = optionsContainer.querySelectorAll("button");
+    buttons.forEach(button => (button.disabled = true)); 
+
+    nextButton.style.display = "block";
+}
+
+
+        function nextQuestion() {
+            const currentQuestion = shuffledQuestions[currentQuestionIndex];
+            const buttons = optionsContainer.querySelectorAll("button");
+
+            buttons.forEach(button => (button.disabled = false)); 
+            nextButton.style.display = "none";
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+    quizContainer.style.display = "none";
+    resultContainer.style.display = "block";
+
+    let correctAnswers = 0;
+    let incorrectAnswers = 0;
+
+    shuffledQuestions.forEach(question => {
+        const selectedOptionIndex = question.selectedOptionIndex;
+        const correctOptionIndex = question.options.findIndex(option => option === question.answer);
+
+        if (selectedOptionIndex !== undefined && selectedOptionIndex === correctOptionIndex) {
+            correctAnswers++;
+        } else {
+            incorrectAnswers++;
+        }
+    });
+
+    correctAnswersElement.textContent = `Correct Answers: ${correctAnswers}`;
+    incorrectAnswersElement.textContent = `Incorrect Answers: ${incorrectAnswers}`;
+}
+
+
+    </script>
+</body>
+</html>
